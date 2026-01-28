@@ -5,8 +5,9 @@ Automated deployment pipeline for [cf-mcp-client](https://github.com/cpage-pivot
 ## How it works
 
 1. A scheduled GitHub Action polls `cpage-pivotal/cf-mcp-client` for new releases every 6 hours.
-2. When a new release is detected, the deploy job is queued and **waits for manual approval** via the `production` GitHub Environment.
-3. Once approved, the workflow downloads the release JAR and manifest, then runs `cf push`.
+2. When a new release is detected, the app is **automatically deployed to Dev**.
+3. After Dev succeeds, the **Prod deployment waits for manual approval** via the `production` GitHub Environment.
+4. Once approved, the workflow deploys to Prod and records the deployed version.
 
 You can also trigger a deployment manually from the **Actions** tab using "Run workflow" and optionally specifying a release tag.
 
@@ -20,8 +21,9 @@ Configure these in **Settings > Secrets and variables > Actions**:
 | `CF_USERNAME` | Cloud Foundry username |
 | `CF_PASSWORD` | Cloud Foundry password |
 | `CF_ORG` | Cloud Foundry organization |
-| `CF_SPACE` | Cloud Foundry space |
+| `CF_DEV_SPACE` | Cloud Foundry dev space |
+| `CF_PROD_SPACE` | Cloud Foundry production space |
 
 ## Environment setup
 
-The `production` environment must be created in **Settings > Environments** with **Required reviewers** enabled. This enforces the approval gate before any deployment runs.
+The `production` environment must be created in **Settings > Environments** with **Required reviewers** enabled. This enforces the approval gate before the Prod deployment runs.

@@ -59,8 +59,47 @@ jobs:
             echo "jar_name=cf-mcp-client-${VERSION}.jar" >> "$GITHUB_OUTPUT"
           fi
 
-  deploy:
+  deploy-dev:
     needs: check-release
+    if: needs.check-release.outputs.new_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="${{ needs.check-release.outputs.release_tag }}"
+          JAR_NAME="${{ needs.check-release.outputs.jar_name }}"
+
+          echo "Downloading assets for release $RELEASE_TAG ..."
+          gh release download "$RELEASE_TAG" \
+            --repo cpage-pivotal/cf-mcp-client \
+            --pattern "$JAR_NAME" \
+            --pattern "manifest.yml" \
+            --dir ./deploy
+
+          echo "Downloaded artifacts:"
+          ls -la ./deploy/
+
+      - name: Install CF CLI
+        run: |
+          curl -sL "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8&source=github" | tar -zx
+          sudo mv cf8 /usr/local/bin/cf
+          cf version
+
+      - name: Deploy to Dev
+        run: |
+          cf api "${{ secrets.CF_API }}"
+          cf auth "${{ secrets.CF_USERNAME }}" "${{ secrets.CF_PASSWORD }}"
+          cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_DEV_SPACE }}"
+
+          cd deploy
+          cf push automated-cf-mcp-client -f manifest.yml -p "${{ needs.check-release.outputs.jar_name }}"
+
+  deploy-prod:
+    needs: [check-release, deploy-dev]
     if: needs.check-release.outputs.new_release == 'true'
     runs-on: ubuntu-latest
     environment: production
@@ -90,11 +129,11 @@ jobs:
           sudo mv cf8 /usr/local/bin/cf
           cf version
 
-      - name: Deploy to Cloud Foundry
+      - name: Deploy to Prod
         run: |
           cf api "${{ secrets.CF_API }}"
           cf auth "${{ secrets.CF_USERNAME }}" "${{ secrets.CF_PASSWORD }}"
-          cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_SPACE }}"
+          cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_PROD_SPACE }}"
 
           cd deploy
           cf push automated-cf-mcp-client -f manifest.yml -p "${{ needs.check-release.outputs.jar_name }}"
