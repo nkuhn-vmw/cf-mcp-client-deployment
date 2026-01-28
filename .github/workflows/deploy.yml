@@ -57,8 +57,9 @@ jobs:
             echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
             VERSION=${RELEASE_TAG#v}
+            APP_VERSION=${VERSION//./-}  # Replace dots with dashes for CF route compatibility
             echo "jar_name=cf-mcp-client-${VERSION}.jar" >> "$GITHUB_OUTPUT"
-            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
           fi
 
   deploy-dev:
