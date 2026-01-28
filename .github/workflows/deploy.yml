@@ -96,7 +96,7 @@ jobs:
           cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_DEV_SPACE }}"
 
           cd deploy
-          cf push automated-cf-mcp-client -f manifest.yml -p "${{ needs.check-release.outputs.jar_name }}"
+          cf push automated-cf-mcp-client-dev -f manifest.yml -p "${{ needs.check-release.outputs.jar_name }}"
 
   deploy-prod:
     needs: [check-release, deploy-dev]
